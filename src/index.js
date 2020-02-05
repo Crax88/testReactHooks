@@ -11,6 +11,7 @@ const App = () => {
         <button onClick={() => setVisible(false)}>Hide</button>
         <HookCounter value={value} />
         <Notification />
+        <PlanetInfo id={value} />
       </div>
     );
   } else {
@@ -41,5 +42,33 @@ const Notification = () => {
     );
   }
   return null;
+};
+const PlanetInfo = ({ id }) => {
+  const [planetName, setPlanetName] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`https://swapi.co/api/planets/${id}/`)
+      .then(res => res.json())
+      .then(data => {
+        setLoading(false);
+        const name = data.name || "Not found";
+        !cancelled && setPlanetName(name);
+      })
+      .catch(() => {
+        setLoading(false);
+        setError(true);
+      });
+    return () => (cancelled = true);
+  }, [id]);
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error!</div>;
+  return (
+    <div>
+      {id} - {planetName}
+    </div>
+  );
 };
 ReactDOM.render(<App />, document.getElementById("root"));
