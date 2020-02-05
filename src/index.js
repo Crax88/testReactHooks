@@ -10,6 +10,7 @@ const App = () => {
         <button onClick={() => setValue(v => v + 1)}>+</button>
         <button onClick={() => setVisible(false)}>Hide</button>
         <HookCounter value={value} />
+        <Notification />
       </div>
     );
   } else {
@@ -25,5 +26,20 @@ const HookCounter = ({ value }) => {
   // имитация ComponentWillUnmount
   useEffect(() => () => console.log("Unmount! "), []);
   return <p>{value}</p>;
+};
+const Notification = () => {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const timeOutId = setTimeout(() => setVisible(false), 3000);
+    return () => clearTimeout(timeOutId);
+  }, []);
+  if (visible) {
+    return (
+      <div>
+        <p>Hello</p>
+      </div>
+    );
+  }
+  return null;
 };
 ReactDOM.render(<App />, document.getElementById("root"));
