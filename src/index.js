@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import ReactDOM from "react-dom";
 
 const App = () => {
@@ -44,29 +44,84 @@ const Notification = () => {
   return null;
 };
 
-const usePlanetInfo = id => {
-  const [planetName, setPlanetName] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`https://swapi.co/api/planets/${id}/`)
-      .then(res => res.json())
-      .then(data => {
-        const name = data.name || "Not found";
-        !cancelled && setPlanetName(name);
-      });
-    return () => (cancelled = true);
-  }, [id]);
-  return planetName;
+const getPlanet = id => {
+  return fetch(`https://swapi.co/api/planets/${id}/`)
+    .then(res => res.json())
+    .then(data => data);
 };
-
+const useRequest = request => {
+  //   const initialState = useMemo(
+  //     () => ({
+  //       data: null,
+  //       loading: true,
+  //       error: null
+  //     }),
+  //     []
+  //   );
+  const [data, setData] = useState({
+    data: null,
+    loading: true,
+    error: null
+  });
+  useEffect(() => {
+    // setData(initialState);
+    let cancelled = false;
+    request()
+      .then(data => {
+        if (!data.name) throw Error("Not Found");
+        !cancelled && setData({ data, loading: false, error: null });
+      })
+      .catch(
+        err =>
+          !cancelled &&
+          setData({ data: null, loading: false, error: err.message })
+      );
+    return () => (cancelled = true);
+  }, [request]);
+  return data;
+};
+const usePlanetInfo = id => {
+  const request = useCallback(() => getPlanet(id), [id]);
+  //   const request = () => getPlanet(id);
+  return useRequest(request);
+};
 const PlanetInfo = ({ id }) => {
-  const name = usePlanetInfo(id);
+  const { data, loading, error } = usePlanetInfo(id);
+  if (error) {
+    return <div>{error || "Something wrong"}</div>;
+  }
+  if (loading) {
+    return <div>Loading...</div>;
+  }
   return (
     <div>
-      {id} - {name}
+      {id} - {data && data.name}
     </div>
   );
 };
+// const usePlanetInfo = id => {
+//   const [planetName, setPlanetName] = useState(null);
+//   useEffect(() => {
+//     let cancelled = false;
+//     fetch(`https://swapi.co/api/planets/${id}/`)
+//       .then(res => res.json())
+//       .then(data => {
+//         const name = data.name || "Not found";
+//         !cancelled && setPlanetName(name);
+//       });
+//     return () => (cancelled = true);
+//   }, [id]);
+//   return planetName;
+// };
+
+// const PlanetInfo = ({ id }) => {
+//   const name = usePlanetInfo(id);
+//   return (
+//     <div>
+//       {id} - {name}
+//     </div>
+//   );
+// };
 // const PlanetInfo = ({ id }) => {
 //   const [planetName, setPlanetName] = useState(null);
 //   const [loading, setLoading] = useState(false);
